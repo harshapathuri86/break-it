@@ -10,24 +10,36 @@ from colorama import init, Fore, Back, Style
 init()
 
 
-Screen_height = 40
-Screen_width = 170
+Screen_height = 41
+Screen_width = 160
 WIDTH = 400
 STARTPOS = 25
 INPUT_CHAR = ''
 factor = 0
+brick_length = 6
+brick_height = 2
+paddle_step = 6
+paddle_sizes = [6, 10, 14]
+BRICK0 = " "
+BRICK1 = Back.GREEN+" "+Back.RESET
+BRICK2 = Back.YELLOW+" "+Back.RESET
+BRICK3 = Back.RED+" "+Back.RESET
+BRICK4 = Back.BLACK+"-"+Back.RESET
+
+# PADDLE = Fore.WHITE+"="+Style.RESET_ALL
+PADDLE = Back.WHITE+" "+Style.RESET_ALL
 
 # OBJECTS:
-BRICK1 = Fore.LIGHTGREEN_EX+"#"+Fore.RESET
-BRICK2 = Fore.LIGHTYELLOW_EX+"#"+Fore.RESET
-BRICK3 = Fore.LIGHTRED_EX+"#"+Fore.RESET
 
-COIN = Fore.LIGHTYELLOW_EX + "$"+Fore.RESET
-PLUS = Fore.WHITE+Back.CYAN+"+"+Style.RESET_ALL
-MAGNET = Fore.LIGHTMAGENTA_EX+"x"+Style.RESET_ALL
-ICE1 = Fore.LIGHTCYAN_EX+"("+Fore.RESET
-ICE2 = Fore.LIGHTCYAN_EX+"@"+Fore.RESET
-ICE3 = Fore.LIGHTCYAN_EX+")"+Fore.RESET
+BRICKS = [[[BRICK0]*brick_length]*brick_height, [[BRICK1]*brick_length]*brick_height,
+          [[BRICK2]*brick_length]*brick_height, [[BRICK3]*brick_length]*brick_height, [[BRICK4]*brick_length]*brick_height]
+
+BALL = [[Fore.RED+"+"+Fore.RESET]]
+# BALL = [[Fore.RED+"❐"+Style.RESET_ALL]]
+# BALL = [[Fore.WHITE+"·"+Style.RESET_ALL]]
+
+PADDLES = [[[PADDLE]*paddle_sizes[0]]*1,
+           [[PADDLE]*paddle_sizes[1]]*1, [[PADDLE]*paddle_sizes[2]]*1]
 
 
 def view_colours():
