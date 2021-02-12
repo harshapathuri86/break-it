@@ -19,12 +19,13 @@ factor = 0
 brick_length = 6
 brick_height = 2
 paddle_step = 6
-paddle_sizes = [6, 10, 14]
+paddle_sizes = [6, 12, 18]
 BRICK0 = " "
 BRICK1 = Back.GREEN+" "+Back.RESET
 BRICK2 = Back.YELLOW+" "+Back.RESET
 BRICK3 = Back.RED+" "+Back.RESET
 BRICK4 = Back.BLACK+"-"+Back.RESET
+BALLS = []
 
 # PADDLE = Fore.WHITE+"="+Style.RESET_ALL
 PADDLE = Back.WHITE+" "+Style.RESET_ALL

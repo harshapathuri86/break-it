@@ -17,6 +17,7 @@ while True:
         # ball.sety(random.randint(6, 156))
         print_bricks()
         print_details(time_played)
-        ball.checkcollision(display.grid)
+        for ball in BALLS:
+            ball.checkcollision(display.grid, paddle)
         display.print_screen()
     input()

@@ -22,7 +22,12 @@ class Object:
     def display(self, screen, shape):
         for i in range(self.__x, self.__x+len(shape)):
             for j in range(self.__y, self.__y+len(shape[0])):
-                screen[i][j] = shape[i-self.__x][j-self.__y]
+                try:
+                    screen[i][j] = shape[i-self.__x][j-self.__y]
+                except:
+                    print("ERR")
+                    print(i, j, self.__x, self.__y)
+                    quit()
 
     # def display(self, screen, shape, x, y):
     #     for i in range(x, x+len(shape)):
@@ -50,6 +55,7 @@ class Ball(Object):
         self.__collided_brick_type = 0
         self.__collided_brick_x = 0
         self.__collided_brick_y = 0
+        self.__onhold = True
         Object.__init__(self, x, y)
 
     def setxv(self, x_velocity):
@@ -64,19 +70,28 @@ class Ball(Object):
     def getcb(self):
         return self.__collided_dia
 
+    def sethold(self, value):
+        self.__onhold = value
+
+    def gethold(self):
+        return self.__onhold
+
     def setyv(self, y_velocity):
         self.__y_v = y_velocity
 
     def getyv(self):
         return self.__y_v
 
-    def checkcollision(self, grid):
-        self.setx(self.getx()+self.getxv())
-        self.sety(self.gety()+self.getyv())
-        self.__collided_brick_type = False
-        self.display(grid, BALL)
-        bx = self.getx()
-        by = self.gety()
+    def checkcollision(self, grid, paddle):
+        if self.__onhold:
+            self.display(grid, BALL)
+            return
+        # self.setx(self.getx()+self.getxv())
+        # self.sety(self.gety()+self.getyv())
+        self.__collided_brick_type = 0
+        # self.display(grid, BALL)
+        bx = self.getx()+self.getxv()
+        by = self.gety()+self.getyv()
         xv = -1
         yv = -1
         check = False
@@ -88,15 +103,16 @@ class Ball(Object):
         if bx >= Screen_height-1:
             self.setx(Screen_height-1)
             self.setxv(-self.getxv())
-            ### GAME OVER ###
+            ### OUT ###
+            paddle.declives()
+            # need to place the ball randomly on paddle if no balls are present else delete ball
             return
-            # quit()
         elif bx <= 0:
             self.setx(0)
             self.setxv(-self.getxv())
             check = True
         if by >= Screen_width-1:
-            self.sety(Screen_width-1)
+            self.sety(Screen_width)
             self.setyv(-self.getyv())
             check = True
         elif by <= 0:
@@ -176,7 +192,8 @@ class Ball(Object):
             #     c2 = True
             # if grid[bx+xv][by+yv] == BRICK1 or grid[bx+xv][by + yv] == BRICK2 or grid[bx+xv][by+yv] == BRICK3 or grid[bx+xv][by+yv] == BRICK4:
             #     c3 = True
-
+            if self.__collided_brick_type != 0:
+                paddle.addscore(self.__collided_brick_type)
             if c1:
                 self.setxv(-self.getxv())
             if c2:
@@ -184,16 +201,62 @@ class Ball(Object):
             if not c1 and not c2 and c3:
                 self.setxv(-self.getxv())
                 self.setyv(-self.getyv())
-        # self.display(grid, BALL)
+        self.setx(bx)
+        self.sety(by)
+        self.display(grid, BALL)
 
 
 class Paddle(Object):
-    def __init__(self, y, type):
-        self.__type = 1
-        Object.__init__(self, Screen_height-4, y)
+    def __init__(self, x, y, type):
+        self.__type = type  # powerup
+        self.__lives = 3
+        self.__score = 0
+        self.__powerup = 0
+        self.__onhold = 0
+        Object.__init__(self, x, y)
 
     def settype(self, type):
         self.__type = type
 
     def gettype(self):
         return self.__type
+
+    def addscore(self, add):
+        if add == 1:
+            self.__score += 10
+        elif add == 2:
+            self.__score += 15
+        elif add == 3:
+            self.__score += 20
+        # elif add == 4:
+
+    def setpowerup(self, powerup):
+        self.__powerup = powerup
+
+    def getpowerup(self):
+        return self.__powerup
+
+    def getscore(self):
+        return self.__score
+
+    def getlives(self):
+        return self.__lives
+
+    def release(self):
+        self.__onhold.sethold(False)
+        self.__onhold = 0
+
+    def gethold(self):
+        return self.__onhold
+
+    def sethold(self, ball):
+        self.__onhold = ball
+
+    def declives(self):
+        if self.__lives > 1:
+            self.__lives -= 1
+            self.__powerup = 0
+        else:
+            pass
+            # os.system('clear')
+            # quit()

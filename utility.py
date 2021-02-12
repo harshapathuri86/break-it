@@ -8,6 +8,7 @@ from screen import Screen
 display = Screen(Screen_height, Screen_width)
 display.create_screen()
 
+
 x = 2
 bricks = []
 while x < Screen_height - 8:
@@ -24,18 +25,38 @@ while x < Screen_height - 8:
     # bricks.append(temp)
 
 
-ball = Ball(10, 0, -1, 1)
-# ball.display(display.grid, BALL)
-paddle = Paddle(50, 1)
+def create_objs():
+    type = 1
+    yp = random.randint(0, Screen_width-paddle_sizes[type])
+    yb = random.randint(yp, yp+paddle_sizes[type])
+    # ball = Ball(Screen_height-5, yb, -1, 1)
+    ball = Ball(Screen_height-5, yb, -1, 1)
+    paddle = Paddle(Screen_height-4, yp, 1)
+    paddle.sethold(ball)
+    BALLS.append(ball)
+    return paddle
 
 
-def print_ball():
+paddle = create_objs()
+
+
+def create_newball(paddle):
+    yp = paddle.gety()
+    yb = random.randint(yp, yp+paddle_sizes[paddle.gettype()])
+    # ball = Ball(Screen_height-5, yb, -1, 1)
+    ball = Ball(Screen_height-5, yb, -1, 1)
+    paddle.sethold(ball)
+    BALLS.append(ball)
+
+
+def print_balls():
     # fx = ball.getx()+ball.x_v
     # fy = ball.gety()+ball.x_y
-
-    ball.setx(ball.getx()+ball.getxv())
-    ball.sety(ball.gety()+ball.getyv())
-    ball.display(display.grid, BALL)
+    for ball in BALLS:
+        print(ball.getx(), ball.gety())
+        ball.setx(ball.getx()+ball.getxv())
+        ball.sety(ball.gety()+ball.getyv())
+        ball.display(display.grid, BALL)
 
 
 def print_bricks():
@@ -43,18 +64,18 @@ def print_bricks():
     paddle.display(grid, PADDLES[paddle.gettype()])
     for a in bricks:
         a.display(grid, BRICKS[a.gettype()])
-
-    type, x, y = ball.getbt()
-    if type == 0:
-        return
-    for a in bricks:
-        if a.gettype() != type or a.gettype() == 4:
-            continue
-        bx = a.getx()
-        by = a.gety()
-        if (x-bx) < brick_height and (y-by) < brick_length:
-            a.settype(type-1)
-            return
+    for ball in BALLS:  # NEED TO CHANGE
+        type, x, y = ball.getbt()
+        if type == 0:
+            break
+        for a in bricks:
+            if a.gettype() != type or a.gettype() == 4:
+                continue
+            bx = a.getx()
+            by = a.gety()
+            if (x-bx) < brick_height and (y-by) < brick_length:
+                a.settype(type-1)
+                break
         # # check collision after bricks are printed
         # # need to do collision diagonally
         # for i in range(brick_length):
@@ -68,7 +89,8 @@ def print_bricks():
 
 
 def print_details(played_time):
-    stat1 = str("  LIVES: "+"lives" + "  |  SCORE:" + "score")
+    stat1 = str("  LIVES: " + str(paddle.getlives()) +
+                "  |  SCORE:" + str(paddle.getscore()))
     stat2 = str("TIME: " + str(played_time))
     stat3 = str("LEFT : a/h | RIGHT : d/l | QUIT: q")
     lol = Screen_width/3
@@ -101,14 +123,32 @@ def input():
     elif char == 'd' or char == 'l':
         t = paddle.gettype()
         y = paddle.gety()
+        h = paddle.gethold()
         if y+paddle_sizes[t] + paddle_step <= Screen_width:
             paddle.sety(y+paddle_step)
+            if h != 0:
+                h.sety(h.gety()+paddle_step)
         else:
+            if h != 0:
+                if y != (Screen_width - paddle_sizes[t]):
+                    h.sety(h.gety()+Screen_width-paddle_sizes[t]-y)
             paddle.sety(Screen_width-paddle_sizes[t])
+
     elif char == 'a' or char == 'h':
         t = paddle.gettype()
         y = paddle.gety()
+        h = paddle.gethold()
         if y - paddle_step >= 0:
             paddle.sety(y-paddle_step)
+            if h != 0:
+                h.sety(h.gety()-paddle_step)
         else:
+            if h != 0:
+                if h.gety() != 0:
+                    h.sety(h.gety()-y)
             paddle.sety(0)
+
+    elif char == ' ':
+        h = paddle.gethold()
+        if h != 0:
+            paddle.release()
