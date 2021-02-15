@@ -1,4 +1,9 @@
+import random
+import os
 from headers import *
+from screen import *
+
+powerups = []
 
 
 class Object:
@@ -19,33 +24,49 @@ class Object:
     def sety(self, y):
         self.__y = y
 
-    def display(self, screen, shape):
-        for i in range(self.__x, self.__x+len(shape)):
-            for j in range(self.__y, self.__y+len(shape[0])):
+    def display(self, shape):
+        for i in range(self.__x, self.__x + len(shape)):
+            for j in range(self.__y, self.__y + len(shape[0])):
                 try:
-                    screen[i][j] = shape[i-self.__x][j-self.__y]
+                    display.grid[i][j] = shape[i - self.__x][j - self.__y]
                 except:
                     print("ERR")
+                    print(shape)
                     print(i, j, self.__x, self.__y)
                     quit()
-
-    # def display(self, screen, shape, x, y):
-    #     for i in range(x, x+len(shape)):
-    #         for j in range(y, y+len(shape[0])):
-    #             screen[i][j] = shape[i-x][j-y]
 
 
 class Brick(Object):
 
-    def __init__(self, x, y, type):
-        self.__type = type
+    def __init__(self, x, y, brick_type):
+        self.__type = brick_type
         Object.__init__(self, x, y)
 
     def gettype(self):
         return self.__type
 
-    def settype(self, type):
-        self.__type = type
+    def settype(self, brick_type):
+        self.__type = brick_type
+
+    def checkcollision(self):
+        for ball in BALLS:
+            type, x, y = ball.getbt()
+            if type == 0:
+                continue
+            if self.__type != type or self.__type == 4:
+                continue
+            bx = x - self.getx()
+            by = y - self.gety()
+            # if bx >= 0 and bx < brick_height and by >= 0 and by < brick_length:
+            if 0 <= bx < brick_height and by >= 0 and by < brick_length:
+                self.settype(type - 1)
+                if type == 1:
+                    if random.randint(1, 100) > 0:
+                        newpower = Powerup(
+                            self.getx(), self.gety(), random.randint(1, 5))
+                        powerups.append(newpower)
+                return
+        self.display(BRICKS[self.gettype()])
 
 
 class Ball(Object):
@@ -55,7 +76,7 @@ class Ball(Object):
         self.__collided_brick_type = 0
         self.__collided_brick_x = 0
         self.__collided_brick_y = 0
-        self.__onhold = True
+        self.__onhold = False
         Object.__init__(self, x, y)
 
     def setxv(self, x_velocity):
@@ -67,9 +88,6 @@ class Ball(Object):
     def getbt(self):
         return self.__collided_brick_type, self.__collided_brick_x, self.__collided_brick_y
 
-    def getcb(self):
-        return self.__collided_dia
-
     def sethold(self, value):
         self.__onhold = value
 
@@ -79,139 +97,137 @@ class Ball(Object):
     def setyv(self, y_velocity):
         self.__y_v = y_velocity
 
+    def incspeed(self):
+        y = self.getyv()
+        x = self.getxv()
+        if y > 0:
+            self.setyv(y + 2)
+        else:
+            self.setyv(y - 2)
+        if x > 0:
+            self.setxv(x + 2)
+        else:
+            self.setxv(x - 2)
+
+    def decspeed(self):
+        y = self.getyv()
+        x = self.getxv()
+        if y > 0:
+            self.setyv(y - 2)
+        else:
+            self.setyv(y + 2)
+        if x > 0:
+            self.setxv(x - 2)
+        else:
+            self.setxv(x + 2)
+
     def getyv(self):
         return self.__y_v
 
-    def checkcollision(self, grid, paddle):
+    def create_newball(self, paddle):
+        yp = paddle.gety()
+        yb = random.randint(yp, yp + paddle_sizes[paddle.gettype()])
+        # ball = Ball(Screen_height-5, yb, -1, 1)
+        ball = Ball(Screen_height - 5, yb, -1, 1)
+        paddle.sethold(ball)
+        BALLS.append(ball)
+        BALLS.remove(self)
+        return
+
+    def checkcollision(self, paddle):
+        # print("INCOL")
         if self.__onhold:
-            self.display(grid, BALL)
+            self.display(BALL)
             return
-        # self.setx(self.getx()+self.getxv())
-        # self.sety(self.gety()+self.getyv())
-        self.__collided_brick_type = 0
-        # self.display(grid, BALL)
-        bx = self.getx()+self.getxv()
-        by = self.gety()+self.getyv()
-        xv = -1
-        yv = -1
-        check = False
-        if self.getxv() > 0:
-            xv = 1
-        if self.getyv() > 0:
-            yv = 1
-        # borders of screen
-        if bx >= Screen_height-1:
-            self.setx(Screen_height-1)
-            self.setxv(-self.getxv())
-            ### OUT ###
-            paddle.declives()
-            # need to place the ball randomly on paddle if no balls are present else delete ball
-            return
-        elif bx <= 0:
-            self.setx(0)
-            self.setxv(-self.getxv())
-            check = True
-        if by >= Screen_width-1:
-            self.sety(Screen_width)
-            self.setyv(-self.getyv())
-            check = True
-        elif by <= 0:
-            self.sety(0)
-            self.setyv(-self.getyv())
-            check = True
-        if not check:
-            c1 = False
-            c2 = False
-            c3 = False
-            type = 0
-            if grid[bx+xv][by] == BRICK1:
-                c1 = True
-                self.__collided_brick_type = 1
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by
-            if grid[bx+xv][by] == BRICK2:
-                c1 = True
-                self.__collided_brick_type = 2
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by
-
-            if grid[bx+xv][by] == BRICK3:
-                c1 = True
-                self.__collided_brick_type = 3
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by
-
-            if grid[bx+xv][by] == BRICK4:
-                c1 = True
-                self.__collided_brick_type = 4
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by
-            if grid[bx][by+yv] == BRICK1:
-                c2 = True
-                self.__collided_brick_type = 1
-                self.__collided_brick_x = bx
-                self.__collided_brick_y = by+yv
-            if grid[bx][by + yv] == BRICK2:
-                c2 = True
-                self.__collided_brick_type = 2
-                self.__collided_brick_x = bx
-                self.__collided_brick_y = by+yv
-            if grid[bx][by+yv] == BRICK3:
-                c2 = True
-                self.__collided_brick_type = 3
-                self.__collided_brick_x = bx
-                self.__collided_brick_y = by+yv
-            if grid[bx][by+yv] == BRICK4:
-                c2 = True
-                self.__collided_brick_type = 4
-                self.__collided_brick_x = bx
-                self.__collided_brick_y = by+yv
-            if grid[bx+xv][by+yv] == BRICK1:
-                c3 = True
-                self.__collided_brick_type = 1
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by+yv
-            if grid[bx+xv][by + yv] == BRICK2:
-                c3 = True
-                self.__collided_brick_type = 2
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by+yv
-            if grid[bx+xv][by+yv] == BRICK3:
-                c3 = True
-                self.__collided_brick_type = 3
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by+yv
-            if grid[bx+xv][by+yv] == BRICK4:
-                c3 = True
-                self.__collided_brick_type = 4
-                self.__collided_brick_x = bx+xv
-                self.__collided_brick_y = by+yv
-            # if grid[bx+xv][by] == BRICK1 or grid[bx+xv][by] == BRICK2 or grid[bx + xv][by] == BRICK3 or grid[bx+xv][by] == BRICK4:
-            #     c1 = True
-            # if grid[bx][by+yv] == BRICK1 or grid[bx][by + yv] == BRICK2 or grid[bx][by+yv] == BRICK3 or grid[bx][by+yv] == BRICK4:
-            #     c2 = True
-            # if grid[bx+xv][by+yv] == BRICK1 or grid[bx+xv][by + yv] == BRICK2 or grid[bx+xv][by+yv] == BRICK3 or grid[bx+xv][by+yv] == BRICK4:
-            #     c3 = True
-            if self.__collided_brick_type != 0:
-                paddle.addscore(self.__collided_brick_type)
-            if c1:
-                self.setxv(-self.getxv())
-            if c2:
-                self.setyv(-self.getyv())
-            if not c1 and not c2 and c3:
-                self.setxv(-self.getxv())
-                self.setyv(-self.getyv())
-        self.setx(bx)
-        self.sety(by)
-        self.display(grid, BALL)
+        diry = 0
+        if self.getyv() < 0:
+            diry = -1
+        else:
+            diry = 1
+        dirx = 0
+        if self.getxv() < 0:
+            dirx = -1
+        else:
+            dirx = 1
+        for y in range(self.gety(), self.gety() + self.getyv() + diry, diry):
+            for x in range(self.getx(), self.getx() + self.getxv() + dirx, dirx):
+                # check border
+                check = False
+                if x < 0:
+                    self.setxv(-self.getxv())
+                    self.setx(0)
+                    check = True
+                elif x > Screen_height - 1:
+                    self.setxv(-self.getxv())
+                    self.setx(Screen_height - 1)
+                    paddle.declives()
+                    self.create_newball(paddle)
+                    check = True
+                if y < 0:
+                    self.setyv(-self.getyv())
+                    self.sety(0)
+                    check = True
+                elif y > Screen_width - 1:
+                    self.setyv(-self.getyv())
+                    self.sety(Screen_width - 1)
+                    check = True
+                if check == True:
+                    self.display(BALL)
+                    return
+                # check brick
+                val = 0
+                try:
+                    val = BRICKTYPES.index(display.grid[x][y])
+                except:
+                    val = 0
+                if val > 0:
+                    # found brick
+                    # need to update collision strategy, should not check full rectangle !!!
+                    # change to something using ratio
+                    paddle.addscore(val)
+                    posy = diry * (y - self.gety())
+                    posx = dirx * (x - self.getx())
+                    if posx == posy:
+                        self.sety(y - diry)
+                        self.setx(x - dirx)
+                        self.setxv(-self.getxv())
+                        self.setyv(-self.getyv())
+                    elif posx > posy:
+                        self.sety(y)
+                        self.setx(x - dirx)
+                        self.setxv(-self.getxv())
+                    elif posx < posy:
+                        self.setyv(-self.getyv())
+                        self.sety(y - diry)
+                        self.setx(x)
+                    self.__collided_brick_type = val
+                    self.__collided_brick_x = x
+                    self.__collided_brick_y = y
+                    self.display(BALL)
+                    return
+                elif x < Screen_height and x > 0 and y < Screen_width and y > 0:
+                    try:
+                        if display.grid[x][y] == PADDLE:
+                            # add variey of speed in y
+                            mid = paddle.gety() + int(paddle_sizes[paddle.gettype()] / 2)
+                            self.sety(y)
+                            self.setx(x - dirx)
+                            self.setxv(-self.getxv())
+                            self.setyv(self.getyv() + y - mid)
+                            self.display(BALL)
+                            return
+                    except:
+                        pass
+        self.setx(self.getx() + self.getxv())
+        self.sety(self.gety() + self.getyv())
+        self.display(BALL)
 
 
 class Paddle(Object):
     def __init__(self, x, y, type):
-        self.__type = type  # powerup
+        self.__type = type
         self.__lives = 3
         self.__score = 0
-        self.__powerup = 0
         self.__onhold = 0
         Object.__init__(self, x, y)
 
@@ -230,12 +246,6 @@ class Paddle(Object):
             self.__score += 20
         # elif add == 4:
 
-    def setpowerup(self, powerup):
-        self.__powerup = powerup
-
-    def getpowerup(self):
-        return self.__powerup
-
     def getscore(self):
         return self.__score
 
@@ -251,12 +261,100 @@ class Paddle(Object):
 
     def sethold(self, ball):
         self.__onhold = ball
+        ball.sethold(True)
 
     def declives(self):
         if self.__lives > 1:
             self.__lives -= 1
-            self.__powerup = 0
+            i = 0
+            while i < len(powerups):
+                if powerups[i].getstatus() == 1:
+                    powerups[i].deactivate(self)
+                    powerups.pop(i)
+                else:
+                    i += 1
         else:
             pass
             # os.system('clear')
+            # print("GAME OVER")
             # quit()
+
+
+class Powerup(Object):
+    def __init__(self, x, y, type):
+        self.__type = type
+        self.__timer = 50
+        self.__status = 0
+        Object.__init__(self, x, y)
+
+    def gettype(self):
+        return self.__type
+
+    def getstatus(self):
+        return self.__status
+
+    def dectimer(self):
+        self.__timer -= 1
+
+    def gettimer(self):
+        return self.__timer
+
+    def kill(self):
+        powerups.remove(self)
+
+    def deactivate(self, paddle):
+        type = self.gettype()
+        if type == 1 or type == 2:
+            paddle.settype(1)
+        elif type == 4:
+            for ball in BALLS:
+                ball.decspeed()
+        else:
+            pass
+
+    def check(self, paddle):
+        # print("LOL", self.gettimer())
+        type = self.gettype()
+        if self.gettimer() == 0:
+            return False
+        if self.getstatus() == 1:
+            self.dectimer()
+            return True
+        x = self.getx()
+        y = self.gety()
+        if display.grid[x + 1][y] == PADDLE:
+            self.__status = 1
+            self.activate(paddle)
+            self.dectimer()
+            return True
+        else:
+            print("X", self.getx())
+            if self.getx() >= Screen_height - 2:
+                return False
+            self.setx(self.getx() + 1)
+            self.display(POWERUPS[self.gettype() - 1])
+            return True
+
+    def activate(self, paddle):
+        if self.__type == 1:
+            # expand done
+            sz = paddle.gety() + len(PADDLES[2]) - len(PADDLES[paddle.gettype()])
+            if sz >= Screen_width:
+                paddle.sety(paddle.gety() + sz - Screen_width)
+            paddle.settype(2)
+        elif self.__type == 2:
+            # shrink done
+            paddle.settype(0)
+        elif self.__type == 3:
+            # add ball
+            pass
+        elif self.__type == 4:
+            # fast ball done
+            for ball in BALLS:
+                ball.incspeed()
+        elif self.__type == 5:
+            # thru ball
+            pass
+        elif self.__type == 6:
+            # paddle grab
+            pass

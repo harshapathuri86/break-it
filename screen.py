@@ -23,3 +23,6 @@ class Screen:
                 print(self.grid[i][j], end='')
 
             print()
+
+
+display = Screen(Screen_height, Screen_width)
