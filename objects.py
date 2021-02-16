@@ -4,6 +4,7 @@ from headers import *
 from screen import *
 
 powerups = []
+newpowerups = []
 
 
 class Object:
@@ -51,20 +52,25 @@ class Brick(Object):
     def checkcollision(self):
         for ball in BALLS:
             type, x, y = ball.getbt()
-            if type == 0:
+            if type == 0 :
                 continue
-            if self.__type != type or self.__type == 4:
+            if self.__type != type:
+                continue
+            if type == 4 and not ball.getthru():
                 continue
             bx = x - self.getx()
             by = y - self.gety()
             # if bx >= 0 and bx < brick_height and by >= 0 and by < brick_length:
-            if 0 <= bx < brick_height and by >= 0 and by < brick_length:
-                self.settype(type - 1)
-                if type == 1:
+            if 0 <= bx < brick_height and 0 <= by < brick_length:
+                if ball.getthru():
+                    self.settype(0)
+                else:
+                    self.settype(type-1)
+                if self.gettype() == 0:
                     if random.randint(1, 100) > 0:
                         newpower = Powerup(
-                            self.getx(), self.gety(), random.randint(1, 5))
-                        powerups.append(newpower)
+                            self.getx(), self.gety(), random.randint(3, 3))
+                        newpowerups.append(newpower)
                 return
         self.display(BRICKS[self.gettype()])
 
@@ -77,6 +83,7 @@ class Ball(Object):
         self.__collided_brick_x = 0
         self.__collided_brick_y = 0
         self.__onhold = False
+        self.__thru = False
         Object.__init__(self, x, y)
 
     def setxv(self, x_velocity):
@@ -84,6 +91,12 @@ class Ball(Object):
 
     def getxv(self):
         return self.__x_v
+
+    def setthru(self, thru):
+        self.__thru = thru
+
+    def getthru(self):
+        return self.__thru
 
     def getbt(self):
         return self.__collided_brick_type, self.__collided_brick_x, self.__collided_brick_y
@@ -131,37 +144,44 @@ class Ball(Object):
         ball = Ball(Screen_height - 5, yb, -1, 1)
         paddle.sethold(ball)
         BALLS.append(ball)
-        BALLS.remove(self)
+        # BALLS.remove(self)
         return
 
     def checkcollision(self, paddle):
-        # print("INCOL")
         if self.__onhold:
             self.display(BALL)
             return
         diry = 0
-        if self.getyv() < 0:
+        jv = self.getyv()
+        iv = self.getxv()
+        i = self.getx()
+        j = self.gety()
+        if jv < 0:
             diry = -1
         else:
             diry = 1
         dirx = 0
-        if self.getxv() < 0:
+        if iv < 0:
             dirx = -1
         else:
             dirx = 1
-        for y in range(self.gety(), self.gety() + self.getyv() + diry, diry):
-            for x in range(self.getx(), self.getx() + self.getxv() + dirx, dirx):
+        # print(j,jv,diry,i,iv,dirx)
+        for y in range(j, j + jv + diry, diry):
+            for x in range(i, i + iv + dirx, dirx):
                 # check border
+                # print("XY",x,y)
                 check = False
                 if x < 0:
                     self.setxv(-self.getxv())
                     self.setx(0)
                     check = True
-                elif x > Screen_height - 1:
+                elif x >= Screen_height - 1:
+                    self.setx(Screen_height - 2)
                     self.setxv(-self.getxv())
-                    self.setx(Screen_height - 1)
-                    paddle.declives()
-                    self.create_newball(paddle)
+                    BALLS.remove(self)
+                    if len(BALLS) == 0:
+                        paddle.declives()
+                        self.create_newball(paddle)
                     check = True
                 if y < 0:
                     self.setyv(-self.getyv())
@@ -171,7 +191,7 @@ class Ball(Object):
                     self.setyv(-self.getyv())
                     self.sety(Screen_width - 1)
                     check = True
-                if check == True:
+                if check:
                     self.display(BALL)
                     return
                 # check brick
@@ -185,6 +205,14 @@ class Ball(Object):
                     # need to update collision strategy, should not check full rectangle !!!
                     # change to something using ratio
                     paddle.addscore(val)
+                    self.__collided_brick_type = val
+                    self.__collided_brick_x = x
+                    self.__collided_brick_y = y
+                    if self.__thru:
+                        self.setx(self.getx() + self.getxv())
+                        self.sety(self.gety() + self.getyv())
+                        self.display(BALL)
+                        return
                     posy = diry * (y - self.gety())
                     posx = dirx * (x - self.getx())
                     if posx == posy:
@@ -200,20 +228,20 @@ class Ball(Object):
                         self.setyv(-self.getyv())
                         self.sety(y - diry)
                         self.setx(x)
-                    self.__collided_brick_type = val
-                    self.__collided_brick_x = x
-                    self.__collided_brick_y = y
                     self.display(BALL)
                     return
-                elif x < Screen_height and x > 0 and y < Screen_width and y > 0:
+                elif Screen_height > x > 0 and y < Screen_width and y > 0:
                     try:
                         if display.grid[x][y] == PADDLE:
                             # add variey of speed in y
-                            mid = paddle.gety() + int(paddle_sizes[paddle.gettype()] / 2)
+                            mid = paddle.gety() + \
+                                  int(paddle_sizes[paddle.gettype()] / 2)
                             self.sety(y)
                             self.setx(x - dirx)
                             self.setxv(-self.getxv())
                             self.setyv(self.getyv() + y - mid)
+                            if paddle.getpaddlehold():
+                                paddle.sethold(self)
                             self.display(BALL)
                             return
                     except:
@@ -229,6 +257,7 @@ class Paddle(Object):
         self.__lives = 3
         self.__score = 0
         self.__onhold = 0
+        self.__paddlehold = True
         Object.__init__(self, x, y)
 
     def settype(self, type):
@@ -236,6 +265,12 @@ class Paddle(Object):
 
     def gettype(self):
         return self.__type
+
+    def setpaddlehold(self, paddlehold):
+        self.__paddlehold = paddlehold
+
+    def getpaddlehold(self):
+        return self.__paddlehold
 
     def addscore(self, add):
         if add == 1:
@@ -266,13 +301,11 @@ class Paddle(Object):
     def declives(self):
         if self.__lives > 1:
             self.__lives -= 1
-            i = 0
-            while i < len(powerups):
-                if powerups[i].getstatus() == 1:
-                    powerups[i].deactivate(self)
-                    powerups.pop(i)
-                else:
-                    i += 1
+            while len(newpowerups):
+                newpowerups.pop()
+            for pow in powerups:
+                if pow.getstatus() == 1:
+                    pow.deactivate(self)
         else:
             pass
             # os.system('clear')
@@ -282,79 +315,197 @@ class Paddle(Object):
 
 class Powerup(Object):
     def __init__(self, x, y, type):
-        self.__type = type
-        self.__timer = 50
+        self.__timer = 0
         self.__status = 0
+        self.__type = type
         Object.__init__(self, x, y)
-
-    def gettype(self):
-        return self.__type
 
     def getstatus(self):
         return self.__status
 
+    def gettype(self):
+        return self.__type
+
+    def setstatus(self, status):
+        self.__status = status
+
+    def addtimer(self):
+        self.__timer += 50
+
+    def setzero(self):
+        self.__timer = 0
+
     def dectimer(self):
         self.__timer -= 1
+        if self.__timer == 0:
+            return True
+        return False
 
     def gettimer(self):
         return self.__timer
 
-    def kill(self):
-        powerups.remove(self)
+    # def kill(self):
+    #     powerups.remove(self)
+    def deactivate(self):
+        self.setstatus(0)
 
-    def deactivate(self, paddle):
+    def activate(self, paddle):
         type = self.gettype()
-        if type == 1 or type == 2:
-            paddle.settype(1)
-        elif type == 4:
-            for ball in BALLS:
-                ball.decspeed()
-        else:
-            pass
+        # print("TYPE",type,self.getx(),self.gety())
+        # print(len(powerups),type)
+        pow = powerups[type - 1]
+        if pow.getstatus() == 0:
+            pow.setstatus(1)
+        pow.addtimer()
 
     def check(self, paddle):
-        # print("LOL", self.gettimer())
-        type = self.gettype()
-        if self.gettimer() == 0:
-            return False
-        if self.getstatus() == 1:
-            self.dectimer()
-            return True
         x = self.getx()
         y = self.gety()
         if display.grid[x + 1][y] == PADDLE:
-            self.__status = 1
             self.activate(paddle)
-            self.dectimer()
             return True
+            # true to kill
         else:
-            print("X", self.getx())
+            # print("X", self.getx())
             if self.getx() >= Screen_height - 2:
-                return False
+                return True
+                # to kill
             self.setx(self.getx() + 1)
             self.display(POWERUPS[self.gettype() - 1])
-            return True
+            return False
+
+
+class expandpaddle(Powerup):
+
+    def __init__(self):
+        Powerup.__init__(self, 0, 0, 0)
+
+    def deactivate(self, paddle):
+        self.setstatus(0)
+        self.setzero()
+        paddle.settype(1)
 
     def activate(self, paddle):
-        if self.__type == 1:
-            # expand done
+        # not working (paddle at right border)
+        if self.getstatus() == 1:
             sz = paddle.gety() + len(PADDLES[2]) - len(PADDLES[paddle.gettype()])
             if sz >= Screen_width:
                 paddle.sety(paddle.gety() + sz - Screen_width)
             paddle.settype(2)
-        elif self.__type == 2:
-            # shrink done
+            if self.dectimer():
+                self.deactivate(paddle)
+
+
+class shrinkpaddle(Powerup):
+
+    def __init__(self):
+        Powerup.__init__(self, 0, 0, 1)
+
+    def deactivate(self, paddle):
+        self.setstatus(0)
+        self.setzero()
+        paddle.settype(1)
+
+    def activate(self, paddle):
+        if self.getstatus() == 1:
             paddle.settype(0)
-        elif self.__type == 3:
-            # add ball
-            pass
-        elif self.__type == 4:
-            # fast ball done
+            if self.dectimer():
+                self.deactivate(paddle)
+
+
+class doubletrouble(Powerup):
+
+    def __init__(self):
+        Powerup.__init__(self, 0, 0, 2)
+
+    def deactivate(self,paddle):
+        # print("LOLOL")
+        self.setstatus(0)
+        # print(len(BALLS),"BALLS")
+        if len(BALLS) == 2:
+            BALLS.pop(1)
+        self.setzero()
+
+    def activate(self, paddle):
+        # print("status",self.getstatus())
+        if self.getstatus() == 1:
+            if len(BALLS) == 1:
+                # pass
+                # add ball
+                b = BALLS[0]
+                if b.getx() < Screen_height - 2:
+                    BALLS.append(Ball(b.getx(), b.gety(), b.getxv(), -b.getyv()))
+                else:
+                    self.deactivate(paddle)
+            if self.dectimer():
+                self.deactivate(paddle)
+            # print("TIMER",self.gettimer())
+        else:
+            self.deactivate(paddle)
+
+
+class fastball(Powerup):
+
+    def __init__(self):
+        self.lol = 0
+        Powerup.__init__(self, 0, 0, 3)
+
+    def deactivate(self,paddle):
+        # pass
+        self.setstatus(0)
+        self.lol = 0
+        for ball in BALLS:
+            ball.decspeed()
+        self.setzero()
+
+    def activate(self, paddle):
+        if self.getstatus() == 1:
+            if self.lol == 0:
+                self.lol = 1
+                for ball in BALLS:
+                    ball.incspeed()
+            if self.dectimer():
+                self.deactivate(paddle)
+            print("TIMER",self.gettimer())
+        # else:
+        #     self.deactivate()
+
+
+class thruball(Powerup):
+
+    def __init__(self):
+        Powerup.__init__(self, 0, 0, 4)
+
+    def deactivate(self,paddle):
+        self.setstatus(0)
+        for ball in BALLS:
+            ball.setthru(False)
+        self.setzero()
+
+    def activate(self, paddle):
+        if self.getstatus() == 1:
+            # code
             for ball in BALLS:
-                ball.incspeed()
-        elif self.__type == 5:
-            # thru ball
-            pass
-        elif self.__type == 6:
-            # paddle grab
-            pass
+                ball.setthru(True)
+            if self.dectimer():
+                self.deactivate(paddle)
+        else:
+            self.deactivate(paddle)
+
+class paddlegrab(Powerup):
+
+    def __init__(self):
+        Powerup.__init__(self, 0, 0, 5)
+
+    def deactivate(self,paddle):
+        self.setstatus(0)
+        paddle.setpaddlehold(False)
+        self.setzero()
+
+    def activate(self, paddle):
+        if self.getstatus() == 1:
+            paddle.setpaddlehold(True)
+            if self.dectimer():
+                self.deactivate(paddle)
+        else:
+            self.deactivate(paddle)

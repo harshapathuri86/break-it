@@ -2,8 +2,8 @@ from colorama import init, Fore, Back, Style
 
 init()
 
-Screen_height = 41
-Screen_width = 160
+Screen_height = 40
+Screen_width = 150
 WIDTH = 400
 INPUT_CHAR = ''
 brick_length = 6
@@ -16,7 +16,7 @@ BRICK2 = Back.YELLOW+" "+Back.RESET
 BRICK3 = Back.RED+" "+Back.RESET
 BRICK4 = Back.BLACK+"-"+Back.RESET
 BALLS = []
-BRICKTYPES=[BRICK0,BRICK1,BRICK2,BRICK3,BRICK4]
+BRICKTYPES = [BRICK0, BRICK1, BRICK2, BRICK3, BRICK4]
 # PADDLE = Fore.WHITE+"="+Style.RESET_ALL
 PADDLE = Back.WHITE+" "+Style.RESET_ALL
 
@@ -33,3 +33,7 @@ BALL = [[Fore.RED+"+"+Fore.RESET]]
 
 PADDLES = [[[PADDLE]*paddle_sizes[0]]*1,
            [[PADDLE]*paddle_sizes[1]]*1, [[PADDLE]*paddle_sizes[2]]*1]
+
+
+def reposition_cursor(x, y):
+    print("\033[%d;%dH" % (x, y))
