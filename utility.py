@@ -80,37 +80,12 @@ def print_details(played_time):
 def input_char():
     char = input_to(Get())
     if char == 'q':
-        # os.system('tput reset')
+        os.system('tput reset')
         quit()
     elif char == 'd' or char == 'l':
-        t = paddle.gettype()
-        y = paddle.gety()
-        h = paddle.gethold()
-        if y + paddle_sizes[t] + paddle_step <= Screen_width:
-            paddle.sety(y + paddle_step)
-            if h != 0:
-                h.sety(h.gety() + paddle_step)
-        else:
-            if h != 0:
-                if y != (Screen_width - paddle_sizes[t]):
-                    h.sety(h.gety() + Screen_width - paddle_sizes[t] - y)
-            paddle.sety(Screen_width - paddle_sizes[t])
-
+        paddle.moveright()
     elif char == 'a' or char == 'h':
-        t = paddle.gettype()
-        y = paddle.gety()
-        h = paddle.gethold()
-        if y - paddle_step >= 0:
-            paddle.sety(y - paddle_step)
-            if h != 0:
-                h.sety(h.gety() - paddle_step)
-        else:
-            if h != 0:
-                if h.gety() != 0:
-                    h.sety(h.gety() - y)
-            paddle.sety(0)
-
+        paddle.moveleft()
     elif char == ' ':
-        h = paddle.gethold()
-        if h != 0:
+        if len(paddle.gethold()) > 0:
             paddle.release()

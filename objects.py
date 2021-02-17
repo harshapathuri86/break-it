@@ -256,7 +256,7 @@ class Paddle(Object):
         self.__type = type
         self.__lives = 3
         self.__score = 0
-        self.__onhold = 0
+        self.__onhold = []
         self.__paddlehold = True
         Object.__init__(self, x, y)
 
@@ -284,18 +284,44 @@ class Paddle(Object):
     def getscore(self):
         return self.__score
 
+    def moveleft(self):
+        if self.gety() - paddle_step >= 0:
+            self.sety(self.gety() - paddle_step)
+            try:
+                for ball in self.__onhold:
+                    ball.sety(ball.gety() - paddle_step)
+            except:
+                print(self.__onhold)
+                quit()
+        else:
+            for ball in self.__onhold:
+                if ball.gety() != 0:
+                    ball.sety(ball.gety() - self.gety())
+            self.sety(0)
+
+    def moveright(self):
+        if self.gety() + paddle_sizes[self.__type] + paddle_step <= Screen_width:
+            self.sety(self.gety() + paddle_step)
+            for ball in self.__onhold:
+                ball.sety(ball.gety() + paddle_step)
+        else:
+            for ball in self.__onhold:
+                if self.gety() != (Screen_width - paddle_sizes[self.__type]):
+                    ball.sety(ball.gety() + Screen_width - paddle_sizes[self.__type] - self.gety())
+            self.sety(Screen_width - paddle_sizes[self.__type])
+
     def getlives(self):
         return self.__lives
 
     def release(self):
-        self.__onhold.sethold(False)
-        self.__onhold = 0
+        self.__onhold[0].sethold(False)
+        self.__onhold.pop(0)
 
     def gethold(self):
         return self.__onhold
 
     def sethold(self, ball):
-        self.__onhold = ball
+        self.__onhold.append(ball)
         ball.sethold(True)
 
     def declives(self):
