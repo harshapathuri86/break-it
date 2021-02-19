@@ -1,5 +1,5 @@
 import time
-from utility import *
+from functions import *
 from screen import display
 
 start_time = time.time()
@@ -9,10 +9,9 @@ os.system('clear')
 
 while True:
 
+    print("\033[%d;%dH" % (0, 0))
     time_played = round(time.time()) - round(start_time)
-    reposition_cursor(0, 0)
     if time.time()-screen_time >= 0.1:
-        # os.system('clear')
         display.create_screen()
         screen_time = time.time()
         paddle.display(PADDLES[paddle.gettype()])
@@ -20,8 +19,8 @@ while True:
         for brick in bricks:
             brick.checkcollision()
         checkpowerups()
-        for pow in powerups:
-            pow.activate(paddle)
+        for power in powerups:
+            power.activate(paddle)
         for ball in BALLS:
             ball.checkcollision(paddle)
 

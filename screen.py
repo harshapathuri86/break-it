@@ -13,7 +13,7 @@ class Screen:
         for i in range(self.__rows):
             self.temp = []
             for j in range(self.__columns):
-                self.temp.append(" ")
+                self.temp.append(Back.BLACK+" "+Back.RESET)
             self.grid.append(self.temp)
 
     def print_screen(self):

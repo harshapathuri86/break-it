@@ -1,10 +1,6 @@
 import random
 import os
-from headers import *
 from screen import *
-
-powerups = []
-newpowerups = []
 
 
 class Object:
@@ -52,7 +48,7 @@ class Brick(Object):
     def checkcollision(self):
         for ball in BALLS:
             type, x, y = ball.getbt()
-            if type == 0 :
+            if type == 0:
                 continue
             if self.__type != type:
                 continue
@@ -65,11 +61,11 @@ class Brick(Object):
                 if ball.getthru():
                     self.settype(0)
                 else:
-                    self.settype(type-1)
+                    self.settype(type - 1)
                 if self.gettype() == 0:
-                    if random.randint(1, 100) > 0:
+                    if random.randint(1, 100) > 60:
                         newpower = Powerup(
-                            self.getx(), self.gety(), random.randint(3, 3))
+                            self.getx(), self.gety(), random.randint(1, 6))
                         newpowerups.append(newpower)
                 return
         self.display(BRICKS[self.gettype()])
@@ -230,7 +226,7 @@ class Ball(Object):
                         self.setx(x)
                     self.display(BALL)
                     return
-                elif Screen_height > x > 0 and y < Screen_width and y > 0:
+                elif Screen_height > x > 0 and Screen_width > y > 0:
                     try:
                         if display.grid[x][y] == PADDLE:
                             # add variey of speed in y
@@ -257,7 +253,7 @@ class Paddle(Object):
         self.__lives = 3
         self.__score = 0
         self.__onhold = []
-        self.__paddlehold = True
+        self.__paddlehold = False
         Object.__init__(self, x, y)
 
     def settype(self, type):
@@ -333,10 +329,10 @@ class Paddle(Object):
                 if pow.getstatus() == 1:
                     pow.deactivate(self)
         else:
-            pass
-            # os.system('clear')
-            # print("GAME OVER")
-            # quit()
+            # pass
+            os.system('tput reset')
+            print("GAME OVER")
+            quit()
 
 
 class Powerup(Object):
@@ -414,7 +410,7 @@ class expandpaddle(Powerup):
     def activate(self, paddle):
         # not working (paddle at right border)
         if self.getstatus() == 1:
-            sz = paddle.gety() + len(PADDLES[2]) - len(PADDLES[paddle.gettype()])
+            sz = paddle.gety() + len(PADDLES[2])
             if sz >= Screen_width:
                 paddle.sety(paddle.gety() + sz - Screen_width)
             paddle.settype(2)
@@ -444,7 +440,7 @@ class doubletrouble(Powerup):
     def __init__(self):
         Powerup.__init__(self, 0, 0, 2)
 
-    def deactivate(self,paddle):
+    def deactivate(self, paddle):
         # print("LOLOL")
         self.setstatus(0)
         # print(len(BALLS),"BALLS")
@@ -476,7 +472,7 @@ class fastball(Powerup):
         self.lol = 0
         Powerup.__init__(self, 0, 0, 3)
 
-    def deactivate(self,paddle):
+    def deactivate(self, paddle):
         # pass
         self.setstatus(0)
         self.lol = 0
@@ -492,7 +488,7 @@ class fastball(Powerup):
                     ball.incspeed()
             if self.dectimer():
                 self.deactivate(paddle)
-            print("TIMER",self.gettimer())
+            # print("TIMER", self.gettimer())
         # else:
         #     self.deactivate()
 
@@ -502,7 +498,7 @@ class thruball(Powerup):
     def __init__(self):
         Powerup.__init__(self, 0, 0, 4)
 
-    def deactivate(self,paddle):
+    def deactivate(self, paddle):
         self.setstatus(0)
         for ball in BALLS:
             ball.setthru(False)
@@ -518,12 +514,13 @@ class thruball(Powerup):
         else:
             self.deactivate(paddle)
 
+
 class paddlegrab(Powerup):
 
     def __init__(self):
         Powerup.__init__(self, 0, 0, 5)
 
-    def deactivate(self,paddle):
+    def deactivate(self, paddle):
         self.setstatus(0)
         paddle.setpaddlehold(False)
         self.setzero()
