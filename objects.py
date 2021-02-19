@@ -63,10 +63,9 @@ class Brick(Object):
                 else:
                     self.settype(type - 1)
                 if self.gettype() == 0:
-                    if random.randint(1, 100) > 60:
-                        newpower = Powerup(
-                            self.getx(), self.gety(), random.randint(1, 6))
-                        newpowerups.append(newpower)
+                    newpower = Powerup(
+                        self.getx(), self.gety(), random.randint(1, 6))
+                    newpowerups.append(newpower)
                 return
         self.display(BRICKS[self.gettype()])
 

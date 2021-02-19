@@ -2,7 +2,7 @@ from colorama import init, Fore, Back, Style
 
 init()
 
-Screen_height = 40
+Screen_height = 34
 Screen_width = 150
 brick_length = 6
 brick_height = 2
@@ -21,7 +21,7 @@ POWERUPS = [[["e"]], [["s"]], [["d"]], [["f"]], [["t"]], [["g"]]]
 BRICKS = [[[BRICK0]*brick_length]*brick_height, [[BRICK1]*brick_length]*brick_height,
           [[BRICK2]*brick_length]*brick_height, [[BRICK3]*brick_length]*brick_height, [[BRICK4]*brick_length]*brick_height]
 
-BALL = [[Fore.BLUE+"✱"+Fore.RESET]]
+BALL = [[Back.BLACK+ Fore.BLUE+"✱"+Style.RESET_ALL]]
 
 PADDLES = [[[PADDLE]*paddle_sizes[0]]*1,
            [[PADDLE]*paddle_sizes[1]]*1, [[PADDLE]*paddle_sizes[2]]*1]
